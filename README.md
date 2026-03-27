@@ -287,7 +287,7 @@ import httpx
 import asyncio
 
 async def evaluate_kernel_simple():
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=None) as client:
         response = await client.post(
             "http://localhost:10907/workflow/submit",
             json={
@@ -420,7 +420,7 @@ def get_inputs():
     return [torch.randn(32, 512, device='cuda')]
 '''
 
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=None) as client:
         response = await client.post(
             "http://localhost:10907/evaluate",
             json={
