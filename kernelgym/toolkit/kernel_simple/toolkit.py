@@ -5,6 +5,8 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional, Tuple
 
 import torch
+import tempfile
+import os
 
 from kernelgym.common import ErrorCode
 from kernelgym.config import settings
@@ -55,10 +57,24 @@ def _normalize_cases(raw_cases: Any) -> List[Dict[str, Any]]:
     return [_normalize_case(case, idx) for idx, case in enumerate(raw_cases)]
 
 
+def _execute_code_with_tempfile(code: str) -> Dict[str, Any]:
+    """Execute code using a temporary file to satisfy Triton's file inspection logic."""
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
+        f.write(code)
+        temp_path = f.name
+
+    context: Dict[str, Any] = {"__file__": temp_path, "__name__": "__main__"}
+    try:
+        compiled = compile(code, temp_path, "exec")
+        exec(compiled, context)
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+    return context
+
+
 def _load_cases_from_code(code: str) -> Tuple[List[Dict[str, Any]], Any]:
-    context: Dict[str, Any] = {}
-    compile(code, "<string>", "exec")
-    exec(code, context)
+    context = _execute_code_with_tempfile(code)
     get_cases = context.get("get_cases")
     get_inputs = context.get("get_inputs")
     get_init_inputs = context.get("get_init_inputs")
@@ -73,9 +89,7 @@ def _load_cases_from_code(code: str) -> Tuple[List[Dict[str, Any]], Any]:
 
 
 def _load_init_inputs_from_code(code: str) -> Any:
-    context: Dict[str, Any] = {}
-    compile(code, "<string>", "exec")
-    exec(code, context)
+    context = _execute_code_with_tempfile(code)
     get_init_inputs = context.get("get_init_inputs")
     return get_init_inputs() if callable(get_init_inputs) else []
 
