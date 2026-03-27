@@ -272,6 +272,10 @@ async def log_requests(request: Request, call_next):
         try:
             body = await request.body()
             if body:
+                async def receive():
+                    return {"type": "http.request", "body": body}
+                request._receive = receive
+                
                 # Parse JSON and log task_id if present
                 try:
                     json_body = json.loads(body)
