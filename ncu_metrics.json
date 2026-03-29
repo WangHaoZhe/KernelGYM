@@ -1,0 +1,10 @@
+{
+    "device__attribute_display_name": {
+        "mapped_name": "display_name",
+        "type": "string"
+    },
+    "sm__throughput.avg.pct_of_peak_sustained_elapsed": {
+        "mapped_name": "sm_utilization",
+        "type": "double"
+    }
+}

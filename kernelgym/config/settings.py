@@ -83,6 +83,23 @@ class Settings(BaseSettings):
         env="PROFILING_RETRY_COUNT",
         description="Retry count when profiler returns empty results (0 to disable).",
     )
+    enable_ncu_profiling: bool = Field(default=True, env="ENABLE_NCU_PROFILING")
+    if enable_ncu_profiling:
+        ncu_path: str = Field(
+            default="/usr/local/NVIDIA-Nsight-Compute-2025.2",
+            env="NCU_PATH",
+            description="Nsight Compute path."
+        )
+        su_pwd: str = Field(
+            default="your-root-password",
+            env="SU_PWD",
+            description="Root password"
+        )
+        ncu_metrics_path: str = Field(
+            default="ncu_metrics.json",
+            env="NCU_METRICS_PATH",
+            description="Nsight Compute metrics config path."
+        )
 
     reference_cache_dataset_path: str = Field(default="", env="REFERENCE_CACHE_DATASET_PATH")
     val_data_cache_dataset_path: str = Field(default="", env="VAL_DATA_CACHE_DATASET_PATH")
