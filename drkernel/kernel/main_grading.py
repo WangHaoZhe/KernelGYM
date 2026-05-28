@@ -1105,6 +1105,7 @@ def main_task(config):
         return_raw_chat=async_rollout_mode,
         truncation='error',
         filter_overlong_prompts=config.data.filter_overlong_prompts,
+        system_prompt_config=config.data.get("system_prompt_config", None),
     )
 
     dataloader = StatefulDataLoader(

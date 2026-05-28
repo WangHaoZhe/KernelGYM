@@ -3,3 +3,6 @@ data/
 __pycache__/
 *.log
 .env
+outputs
+ckpt
+results

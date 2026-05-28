@@ -55,6 +55,7 @@ reward_model:
   coverage_rs_key: "time_coverage"
   speedup_threshold: null
   detect_decoy_kernel: true
+  reference_backend: "pytorch"
 
   # 传入 KernelRewardManager 的参数（用于异步 reward_manager 初始化）
   reward_kwargs:
@@ -74,6 +75,7 @@ reward_model:
     num_correct_trials: ${reward_model.num_correct_trials}
     enable_profiling: ${reward_model.enable_profiling}
     verbose_errors: ${reward_model.verbose_errors}
+    reference_backend: ${reward_model.reference_backend}
   # Reference caching configuration
   reference_cache:
     enable: false  # Enable reference caching by default

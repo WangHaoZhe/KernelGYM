@@ -1,0 +1,14 @@
+method: post_input
+prompt: |
+
+
+  Important evaluation constraints:
+  - Evaluation uses CUDA and focuses on the provided benchmark setting.
+  - Do not add fallback branches to PyTorch implementations.
+  - Do not gate Triton execution on `self.training`, `self.bn.training`,
+  `torch.is_grad_enabled()`, or any tensor's `requires_grad`.
+  - Do not add conditional logic such as "if training/use torch else use Triton".
+  - Provide a direct Triton-based implementation for the benchmarked forward path.
+  - Keep the implementation simple and focused on the evaluated case.
+
+  Let's think step by step.
