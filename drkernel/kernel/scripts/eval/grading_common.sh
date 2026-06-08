@@ -85,6 +85,8 @@ OPENAI_MAX_CONCURRENCY=${OPENAI_MAX_CONCURRENCY:-64}
 # Reward Manager Configuration
 REWARD_MANAGER=${REWARD_MANAGER:-"kernel_async"}
 REWARD_SERVER_URL=${REWARD_SERVER_URL:-"${KERNELGYM_SERVER_URL}"}
+COMM_MODE=${KERNELGYM_COMM_MODE:-""}
+SHARED_DIR=${KERNELGYM_SHARED_DIR:-"/tmp/kernelgym_shared"}
 REWARD_FUNC_NAME=${REWARD_FUNC_NAME:-"calculate_reward_weighted"}
 
 # Kernel Reward Parameters
@@ -472,6 +474,8 @@ run_grading() {
       reward_model.reward_manager=$REWARD_MANAGER \
       reward_model.reference_backend=$REFERENCE_BACKEND \
       reward_model.server_url='"'$REWARD_SERVER_URL'"' \
+      reward_model.comm_mode=$COMM_MODE \
+      reward_model.shared_dir=$SHARED_DIR \
       reward_model.reward_func_name=$REWARD_FUNC_NAME \
       reward_model.enhanced=$REWARD_ENHANCED \
       reward_model.use_sandbox_rate_limit=$REWARD_USE_SANDBOX_RATE_LIMIT \

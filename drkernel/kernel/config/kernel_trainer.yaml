@@ -55,6 +55,8 @@ reward_model:
   coverage_rs_key: "time_coverage"
   speedup_threshold: null
   detect_decoy_kernel: true
+  comm_mode: ""
+  shared_dir: "/tmp/kernelgym_shared"
   reference_backend: "pytorch"
 
   # 传入 KernelRewardManager 的参数（用于异步 reward_manager 初始化）

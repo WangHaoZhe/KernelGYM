@@ -150,6 +150,32 @@ class _HybridHttpWorker:
             # No need to release here (already released during submission).
             pass
 
+    def submit_and_poll_file(self, task_data: Dict[str, Any], client_timeout: int, max_retries: Optional[int], shared_dir: str) -> Dict[str, Any]:
+        """Submit task via shared filesystem (no network needed).
+
+        Args:
+            task_data: Task payload
+            client_timeout: Client-side total timeout
+            max_retries: Ignored in file mode (file transport is reliable)
+            shared_dir: Shared directory accessible by both nodes
+        """
+        from kernelgym.toolkit.kernelbench.file_proxy import send_eval_via_file
+
+        start_ts = time.time()
+        print(f"[FileWorker] file_submit task_id={task_data.get('task_id','')} dir={shared_dir}")
+
+        result = send_eval_via_file(
+            shared_dir=shared_dir,
+            payload=task_data,
+            poll_interval=1.0,
+            client_timeout=client_timeout,
+        )
+
+        elapsed = time.time() - start_ts
+        status = result.get("status", "unknown")
+        print(f"[FileWorker] result task_id={task_data.get('task_id','')} status={status} elapsed={elapsed:.1f}s")
+        return result
+
 
 class KernelRewardClient:
     def __init__(self, *, reward_config: Any) -> None:
@@ -178,6 +204,12 @@ class KernelRewardClient:
         self._worker = _HybridHttpWorker.options(max_concurrency=self.num_workers).remote(
             self.server_url, self.rate_limit, int(self.timeout), self.acquire_timeout
         )
+
+        # File-based communication mode (shared filesystem, no network)
+        self._comm_mode = getattr(reward_config, "comm_mode", "") or ""
+        self._shared_dir = getattr(reward_config, "shared_dir", "") or ""
+        print(f"[KernelRewardClient] comm_mode={self._comm_mode!r} shared_dir={self._shared_dir!r} server_url={self.server_url!r}")
+
         # Keep a separate token bucket handle for heartbeat water-level checks.
         self._rate_limit_worker = TokenBucketWorker.options(name="rate-limiter", get_if_exists=True).remote(self.rate_limit)
 
@@ -669,13 +701,23 @@ class KernelRewardClient:
                 "orig_idx": idx,
             }
             
-            obj_refs.append(
-                self._worker.submit_and_poll.remote(
-                    payload,
-                    per_task_timeout_in_client,
-                    self.max_retries,
+            if self._comm_mode == "file":
+                obj_refs.append(
+                    self._worker.submit_and_poll_file.remote(
+                        payload,
+                        per_task_timeout_in_client,
+                        self.max_retries,
+                        self._shared_dir,
+                    )
                 )
-            )
+            else:
+                obj_refs.append(
+                    self._worker.submit_and_poll.remote(
+                        payload,
+                        per_task_timeout_in_client,
+                        self.max_retries,
+                    )
+                )
             index_map.append(idx)
             submitted += 1
 

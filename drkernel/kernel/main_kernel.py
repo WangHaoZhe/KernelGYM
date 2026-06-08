@@ -246,7 +246,8 @@ class TaskRunner:
         # Kernel server health check (optional but recommended)
         try:
             server_url = config.reward_model.server_url
-            if server_url:
+            comm_mode = getattr(config.reward_model, "comm_mode", "")
+            if server_url and comm_mode != "file":
                 _check_kernel_server_health(server_url)
         except Exception as e:
             raise RuntimeError(f"Kernel server health check failed: {e}")

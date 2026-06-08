@@ -2,6 +2,8 @@
 
 # Start KernelGym API server, worker monitor, and GPU workers.
 # Assumes this script is run from any location; it will resolve the repo root.
+KERNELGYM_COMM_MODE="file"  # default to file-based IPC, can be overridden in .env or via --use-indexed-ports
+KERNELGYM_SHARED_DIR="/tmp/kernelgym_shared"
 
 set -euo pipefail
 
@@ -106,6 +108,17 @@ if ! port_is_open "${REDIS_HOST}" "${REDIS_PORT}"; then
     sleep 2
 fi
 
+COMM_MODE="${KERNELGYM_COMM_MODE:-""}"
+SHARED_DIR="${KERNELGYM_SHARED_DIR:-"/tmp/kernelgym_shared"}"
+FILE_MODE=false
+if [ "$COMM_MODE" = "file" ]; then
+    FILE_MODE=true
+    echo "Cleaning up stale shared dir files..."
+    rm -rf "$SHARED_DIR/requests"/* "$SHARED_DIR/responses"/* 2>/dev/null
+    echo "File-based IPC mode enabled (shared_dir=$SHARED_DIR)"
+    echo "Normal server (Redis + API + workers) will start as usual; file proxy bridges to localhost API."
+fi
+
 echo "Starting API server..."
 python -m kernelgym.server.api.server > "${ROOT_DIR}/${LOG_DIR}/api_server.log" 2>&1 &
 API_PID=$!
@@ -174,6 +187,15 @@ for gpu in ${GPU_LIST}; do
     echo "Worker PID: ${WORKER_PID}"
     sleep 0.3
 done
+
+if [ "$FILE_MODE" = "true" ]; then
+    echo "Starting file proxy (shared_dir=$SHARED_DIR -> localhost:${API_PORT:-8001})..."
+    KERNELGYM_SHARED_DIR="$SHARED_DIR" \
+        python -m kernelgym.toolkit.kernelbench.file_proxy \
+        > "${ROOT_DIR}/${LOG_DIR}/file_proxy.log" 2>&1 &
+    PROXY_PID=$!
+    echo "File proxy PID: ${PROXY_PID}"
+fi
 
 echo "KernelGym started."
 echo "Logs: ${ROOT_DIR}/${LOG_DIR}"

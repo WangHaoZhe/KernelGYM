@@ -317,6 +317,8 @@ reward_model:
   enable_profiling: true
   verbose_errors: true
   detect_decoy_kernel: true
+  comm_mode: ""
+  shared_dir: "/tmp/kernelgym_shared"
 
   # Reward weights
   reward_weights:

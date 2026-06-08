@@ -190,6 +190,8 @@ REWARD_MANAGER=${REWARD_MANAGER:-"kernel_async"}        # Reward manager (e.g., 
 
 # Kernel reward-related defaults (can be overridden by task scripts or CLI)
 REWARD_SERVER_URL=${KERNELGYM_SERVER_URL:-""}
+COMM_MODE=${KERNELGYM_COMM_MODE:-""}
+SHARED_DIR=${KERNELGYM_SHARED_DIR:-"/tmp/kernelgym_shared"}
 REWARD_ENHANCED=${REWARD_ENHANCED:-True}
 REWARD_USE_SANDBOX_RATE_LIMIT=${REWARD_USE_SANDBOX_RATE_LIMIT:-True}
 REWARD_RATE_LIMIT=${REWARD_RATE_LIMIT:-64}
@@ -804,6 +806,8 @@ run_training() {
       reward_model.enhanced=$REWARD_ENHANCED \
       reward_model.use_sandbox_rate_limit=$REWARD_USE_SANDBOX_RATE_LIMIT \
       reward_model.server_url='"'$REWARD_SERVER_URL'"' \
+      reward_model.comm_mode=$COMM_MODE \
+      reward_model.shared_dir=$SHARED_DIR \
       reward_model.rate_limit=$REWARD_RATE_LIMIT \
       reward_model.acquire_timeout=$REWARD_ACQUIRE_TIMEOUT \
       reward_model.max_concurrent=$REWARD_MAX_CONCURRENT \

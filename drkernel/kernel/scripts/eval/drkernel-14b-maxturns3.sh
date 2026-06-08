@@ -54,7 +54,8 @@ SOLVE_THRESHOLD=0.99         # Score >= 0.99 considered as "solved"
 PASS_AT_K=1                  # Compute pass@1 metric
 
 REWARD_SERVER_URL="${REWARD_SERVER_URL:-${KERNELGYM_SERVER_URL:-""}}"    # set directly or via env
-
+KERNELGYM_COMM_MODE="file"
+KERNELGYM_SHARED_DIR="/tmp/kernelgym_shared"
 
 # Reward Manager
 REWARD_MANAGER="kernel_async"
@@ -117,6 +118,8 @@ export SOLVE_THRESHOLD
 export PASS_AT_K
 
 export REWARD_SERVER_URL
+export KERNELGYM_COMM_MODE
+export KERNELGYM_SHARED_DIR
 export REWARD_MANAGER
 export REWARD_FUNC_NAME
 export REWARD_WEIGHTS

@@ -3,6 +3,8 @@
 TRAIN_DATASET=("hkust-nlp/drkernel-rl-data")    # you need to set your own training dataset
 VALID_DATASET=("hkust-nlp/drkernel-validation-data")    # you need to set your own validation dataset
 KERNELGYM_SERVER_URL="${KERNELGYM_SERVER_URL:-""}"   # set directly or via env
+KERNELGYM_COMM_MODE="file"          # "file" for shared-filesystem IPC
+KERNELGYM_SHARED_DIR="/tmp/kernelgym_shared"
 MODEL_NAME=hkust-nlp/drkernel-14b
 MODEL_PATH=${MODEL_NAME}
 
