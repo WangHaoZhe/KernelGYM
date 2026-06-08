@@ -23,7 +23,6 @@ from kernelgym.toolkit.kernelbench.timing import (
     run_profiling_only,
     time_execution_with_cuda_event,
 )
-from kernelgym.toolkit.kernelbench.ncu import run_ncu_profiling
 
 
 def _run_correctness_step(
@@ -554,6 +553,8 @@ def eval_kernel_against_ref(
         )
 
     if enable_ncu_profiling := getattr(settings, "enable_ncu_profiling", False):
+        from kernelgym.toolkit.kernelbench.ncu import run_ncu_profiling
+
         run_ncu_profiling(tempfile_handle.name, kernel_exec_result=kernel_exec_result, device=device)
 
     _cleanup()
