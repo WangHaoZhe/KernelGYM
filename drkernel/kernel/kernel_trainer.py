@@ -1134,7 +1134,10 @@ def apply_kl_penalty(
     if "uid" in data.non_tensor_batch:
         # Count unique samples (original batch size) instead of total turns
         uids = data.non_tensor_batch["uid"]
-        unique_samples = torch.unique(uids).numel()
+        if hasattr(uids, "tolist"):
+            uids = uids.tolist()
+        # unique_samples = torch.unique(uids).numel()
+        unique_samples = len(set(uids))
         print(
             f"[DEBUG] KL using unique samples count: {unique_samples} instead of {batch_size}"
         )
