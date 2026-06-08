@@ -1,0 +1,334 @@
+{
+  "sources": [
+    {
+      "id": "triton_tutorial_vector_add",
+      "title": "Triton Tutorial: Vector Addition",
+      "category": "triton_tutorial",
+      "tags": [
+        "triton",
+        "elementwise",
+        "memory"
+      ],
+      "url": "https://triton-lang.org/main/getting-started/tutorials/01-vector-add.html",
+      "local_path": "/inspire/qb-ilm/project/wuliqifa/public/wanghaozhe/KernelGYM/drkernel/kernel/rag/manual_rag_v3/raw/triton_tutorial_vector_add.html",
+      "content_type": "text/html; charset=utf-8",
+      "fetched_title": "Vector Addition — Triton  documentation",
+      "status_code": 200
+    },
+    {
+      "id": "triton_tutorial_fused_softmax",
+      "title": "Triton Tutorial: Fused Softmax",
+      "category": "triton_tutorial",
+      "tags": [
+        "triton",
+        "softmax",
+        "reduction"
+      ],
+      "url": "https://triton-lang.org/main/getting-started/tutorials/02-fused-softmax.html",
+      "local_path": "/inspire/qb-ilm/project/wuliqifa/public/wanghaozhe/KernelGYM/drkernel/kernel/rag/manual_rag_v3/raw/triton_tutorial_fused_softmax.html",
+      "content_type": "text/html; charset=utf-8",
+      "fetched_title": "Fused Softmax — Triton  documentation",
+      "status_code": 200
+    },
+    {
+      "id": "triton_tutorial_matmul",
+      "title": "Triton Tutorial: Matrix Multiplication",
+      "category": "triton_tutorial",
+      "tags": [
+        "triton",
+        "matmul",
+        "block_tiling"
+      ],
+      "url": "https://triton-lang.org/main/getting-started/tutorials/03-matrix-multiplication.html",
+      "local_path": "/inspire/qb-ilm/project/wuliqifa/public/wanghaozhe/KernelGYM/drkernel/kernel/rag/manual_rag_v3/raw/triton_tutorial_matmul.html",
+      "content_type": "text/html; charset=utf-8",
+      "fetched_title": "Matrix Multiplication — Triton  documentation",
+      "status_code": 200
+    },
+    {
+      "id": "triton_tutorial_low_memory_dropout",
+      "title": "Triton Tutorial: Low-Memory Dropout",
+      "category": "triton_tutorial",
+      "tags": [
+        "triton",
+        "dropout",
+        "memory"
+      ],
+      "url": "https://triton-lang.org/main/getting-started/tutorials/04-low-memory-dropout.html",
+      "local_path": "/inspire/qb-ilm/project/wuliqifa/public/wanghaozhe/KernelGYM/drkernel/kernel/rag/manual_rag_v3/raw/triton_tutorial_low_memory_dropout.html",
+      "content_type": "text/html; charset=utf-8",
+      "fetched_title": "Low-Memory Dropout — Triton  documentation",
+      "status_code": 200
+    },
+    {
+      "id": "triton_tutorial_layer_norm",
+      "title": "Triton Tutorial: Layer Normalization",
+      "category": "triton_tutorial",
+      "tags": [
+        "triton",
+        "layernorm",
+        "reduction"
+      ],
+      "url": "https://triton-lang.org/main/getting-started/tutorials/05-layer-norm.html",
+      "local_path": "/inspire/qb-ilm/project/wuliqifa/public/wanghaozhe/KernelGYM/drkernel/kernel/rag/manual_rag_v3/raw/triton_tutorial_layer_norm.html",
+      "content_type": "text/html; charset=utf-8",
+      "fetched_title": "Layer Normalization — Triton  documentation",
+      "status_code": 200
+    },
+    {
+      "id": "triton_tutorial_grouped_gemm",
+      "title": "Triton Tutorial: Group GEMM",
+      "category": "triton_tutorial",
+      "tags": [
+        "triton",
+        "gemm",
+        "grouped_gemm"
+      ],
+      "url": "https://triton-lang.org/main/getting-started/tutorials/08-grouped-gemm.html",
+      "local_path": "/inspire/qb-ilm/project/wuliqifa/public/wanghaozhe/KernelGYM/drkernel/kernel/rag/manual_rag_v3/raw/triton_tutorial_grouped_gemm.html",
+      "content_type": "text/html; charset=utf-8",
+      "fetched_title": "Group GEMM — Triton  documentation",
+      "status_code": 200
+    },
+    {
+      "id": "triton_tutorial_persistent_matmul",
+      "title": "Triton Tutorial: Persistent Matmul",
+      "category": "triton_tutorial",
+      "tags": [
+        "triton",
+        "matmul",
+        "persistent"
+      ],
+      "url": "https://triton-lang.org/main/getting-started/tutorials/09-persistent-matmul.html",
+      "local_path": "/inspire/qb-ilm/project/wuliqifa/public/wanghaozhe/KernelGYM/drkernel/kernel/rag/manual_rag_v3/raw/triton_tutorial_persistent_matmul.html",
+      "content_type": "text/html; charset=utf-8",
+      "fetched_title": "Persistent Matmul — Triton  documentation",
+      "status_code": 200
+    },
+    {
+      "id": "triton_semantics",
+      "title": "Triton Semantics",
+      "category": "triton_api",
+      "tags": [
+        "triton",
+        "semantics",
+        "broadcasting"
+      ],
+      "url": "https://triton-lang.org/main/python-api/triton-semantics.html",
+      "local_path": "/inspire/qb-ilm/project/wuliqifa/public/wanghaozhe/KernelGYM/drkernel/kernel/rag/manual_rag_v3/raw/triton_semantics.html",
+      "content_type": "text/html; charset=utf-8",
+      "fetched_title": "Triton Semantics — Triton  documentation",
+      "status_code": 200
+    },
+    {
+      "id": "triton_api_make_block_ptr",
+      "title": "Triton API: make_block_ptr",
+      "category": "triton_api",
+      "tags": [
+        "triton",
+        "block_ptr",
+        "memory"
+      ],
+      "url": "https://triton-lang.org/main/python-api/generated/triton.language.make_block_ptr.html",
+      "local_path": "/inspire/qb-ilm/project/wuliqifa/public/wanghaozhe/KernelGYM/drkernel/kernel/rag/manual_rag_v3/raw/triton_api_make_block_ptr.html",
+      "content_type": "text/html; charset=utf-8",
+      "fetched_title": "triton.language.make_block_ptr — Triton  documentation",
+      "status_code": 200
+    },
+    {
+      "id": "triton_api_load",
+      "title": "Triton API: load",
+      "category": "triton_api",
+      "tags": [
+        "triton",
+        "memory",
+        "load"
+      ],
+      "url": "https://triton-lang.org/main/python-api/generated/triton.language.load.html",
+      "local_path": "/inspire/qb-ilm/project/wuliqifa/public/wanghaozhe/KernelGYM/drkernel/kernel/rag/manual_rag_v3/raw/triton_api_load.html",
+      "content_type": "text/html; charset=utf-8",
+      "fetched_title": "triton.language.load — Triton  documentation",
+      "status_code": 200
+    },
+    {
+      "id": "triton_api_store",
+      "title": "Triton API: store",
+      "category": "triton_api",
+      "tags": [
+        "triton",
+        "memory",
+        "store"
+      ],
+      "url": "https://triton-lang.org/main/python-api/generated/triton.language.store.html",
+      "local_path": "/inspire/qb-ilm/project/wuliqifa/public/wanghaozhe/KernelGYM/drkernel/kernel/rag/manual_rag_v3/raw/triton_api_store.html",
+      "content_type": "text/html; charset=utf-8",
+      "fetched_title": "triton.language.store — Triton  documentation",
+      "status_code": 200
+    },
+    {
+      "id": "triton_api_dot",
+      "title": "Triton API: dot",
+      "category": "triton_api",
+      "tags": [
+        "triton",
+        "matmul",
+        "dot"
+      ],
+      "url": "https://triton-lang.org/main/python-api/generated/triton.language.dot.html",
+      "local_path": "/inspire/qb-ilm/project/wuliqifa/public/wanghaozhe/KernelGYM/drkernel/kernel/rag/manual_rag_v3/raw/triton_api_dot.html",
+      "content_type": "text/html; charset=utf-8",
+      "fetched_title": "triton.language.dot — Triton  documentation",
+      "status_code": 200
+    },
+    {
+      "id": "triton_api_where",
+      "title": "Triton API: where",
+      "category": "triton_api",
+      "tags": [
+        "triton",
+        "where",
+        "masking"
+      ],
+      "url": "https://triton-lang.org/main/python-api/generated/triton.language.where.html",
+      "local_path": "/inspire/qb-ilm/project/wuliqifa/public/wanghaozhe/KernelGYM/drkernel/kernel/rag/manual_rag_v3/raw/triton_api_where.html",
+      "content_type": "text/html; charset=utf-8",
+      "fetched_title": "triton.language.where — Triton  documentation",
+      "status_code": 200
+    },
+    {
+      "id": "triton_api_sum",
+      "title": "Triton API: sum",
+      "category": "triton_api",
+      "tags": [
+        "triton",
+        "sum",
+        "reduction"
+      ],
+      "url": "https://triton-lang.org/main/python-api/generated/triton.language.sum.html",
+      "local_path": "/inspire/qb-ilm/project/wuliqifa/public/wanghaozhe/KernelGYM/drkernel/kernel/rag/manual_rag_v3/raw/triton_api_sum.html",
+      "content_type": "text/html; charset=utf-8",
+      "fetched_title": "triton.language.sum — Triton  documentation",
+      "status_code": 200
+    },
+    {
+      "id": "triton_api_max",
+      "title": "Triton API: max",
+      "category": "triton_api",
+      "tags": [
+        "triton",
+        "max",
+        "reduction"
+      ],
+      "url": "https://triton-lang.org/main/python-api/generated/triton.language.max.html",
+      "local_path": "/inspire/qb-ilm/project/wuliqifa/public/wanghaozhe/KernelGYM/drkernel/kernel/rag/manual_rag_v3/raw/triton_api_max.html",
+      "content_type": "text/html; charset=utf-8",
+      "fetched_title": "triton.language.max — Triton  documentation",
+      "status_code": 200
+    },
+    {
+      "id": "triton_api_sigmoid",
+      "title": "Triton API: sigmoid",
+      "category": "triton_api",
+      "tags": [
+        "triton",
+        "sigmoid",
+        "activation"
+      ],
+      "url": "https://triton-lang.org/main/python-api/generated/triton.language.sigmoid.html",
+      "local_path": "/inspire/qb-ilm/project/wuliqifa/public/wanghaozhe/KernelGYM/drkernel/kernel/rag/manual_rag_v3/raw/triton_api_sigmoid.html",
+      "content_type": "text/html; charset=utf-8",
+      "fetched_title": "triton.language.sigmoid — Triton  documentation",
+      "status_code": 200
+    },
+    {
+      "id": "triton_api_clamp",
+      "title": "Triton API: clamp",
+      "category": "triton_api",
+      "tags": [
+        "triton",
+        "clamp",
+        "activation"
+      ],
+      "url": "https://triton-lang.org/main/python-api/generated/triton.language.clamp.html",
+      "local_path": "/inspire/qb-ilm/project/wuliqifa/public/wanghaozhe/KernelGYM/drkernel/kernel/rag/manual_rag_v3/raw/triton_api_clamp.html",
+      "content_type": "text/html; charset=utf-8",
+      "fetched_title": "triton.language.clamp — Triton  documentation",
+      "status_code": 200
+    },
+    {
+      "id": "triton_api_softmax",
+      "title": "Triton API: softmax",
+      "category": "triton_api",
+      "tags": [
+        "triton",
+        "softmax",
+        "reduction"
+      ],
+      "url": "https://triton-lang.org/main/python-api/generated/triton.language.softmax.html",
+      "local_path": "/inspire/qb-ilm/project/wuliqifa/public/wanghaozhe/KernelGYM/drkernel/kernel/rag/manual_rag_v3/raw/triton_api_softmax.html",
+      "content_type": "text/html; charset=utf-8",
+      "fetched_title": "triton.language.softmax — Triton  documentation",
+      "status_code": 200
+    },
+    {
+      "id": "pytorch_batchnorm1d",
+      "title": "PyTorch API: BatchNorm1d",
+      "category": "pytorch_api",
+      "tags": [
+        "pytorch",
+        "batchnorm",
+        "normalization"
+      ],
+      "url": "https://docs.pytorch.org/docs/2.12/generated/torch.nn.BatchNorm1d.html",
+      "local_path": "/inspire/qb-ilm/project/wuliqifa/public/wanghaozhe/KernelGYM/drkernel/kernel/rag/manual_rag_v3/raw/pytorch_batchnorm1d.html",
+      "content_type": "text/html; charset=utf-8",
+      "fetched_title": "BatchNorm1d — PyTorch 2.12 documentation",
+      "status_code": 200
+    },
+    {
+      "id": "pytorch_batchnorm2d",
+      "title": "PyTorch API: BatchNorm2d",
+      "category": "pytorch_api",
+      "tags": [
+        "pytorch",
+        "batchnorm",
+        "normalization"
+      ],
+      "url": "https://docs.pytorch.org/docs/2.12/generated/torch.nn.BatchNorm2d.html",
+      "local_path": "/inspire/qb-ilm/project/wuliqifa/public/wanghaozhe/KernelGYM/drkernel/kernel/rag/manual_rag_v3/raw/pytorch_batchnorm2d.html",
+      "content_type": "text/html; charset=utf-8",
+      "fetched_title": "BatchNorm2d — PyTorch 2.12 documentation",
+      "status_code": 200
+    },
+    {
+      "id": "pytorch_groupnorm",
+      "title": "PyTorch API: GroupNorm",
+      "category": "pytorch_api",
+      "tags": [
+        "pytorch",
+        "groupnorm",
+        "normalization"
+      ],
+      "url": "https://docs.pytorch.org/docs/2.12/generated/torch.nn.GroupNorm.html",
+      "local_path": "/inspire/qb-ilm/project/wuliqifa/public/wanghaozhe/KernelGYM/drkernel/kernel/rag/manual_rag_v3/raw/pytorch_groupnorm.html",
+      "content_type": "text/html; charset=utf-8",
+      "fetched_title": "GroupNorm — PyTorch 2.12 documentation",
+      "status_code": 200
+    },
+    {
+      "id": "pytorch_dropout",
+      "title": "PyTorch API: Dropout",
+      "category": "pytorch_api",
+      "tags": [
+        "pytorch",
+        "dropout",
+        "regularization"
+      ],
+      "url": "https://docs.pytorch.org/docs/2.12/generated/torch.nn.Dropout.html",
+      "local_path": "/inspire/qb-ilm/project/wuliqifa/public/wanghaozhe/KernelGYM/drkernel/kernel/rag/manual_rag_v3/raw/pytorch_dropout.html",
+      "content_type": "text/html; charset=utf-8",
+      "fetched_title": "Dropout — PyTorch 2.12 documentation",
+      "status_code": 200
+    }
+  ]
+}

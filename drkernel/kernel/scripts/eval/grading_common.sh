@@ -125,6 +125,13 @@ if [ "$VAR_SERVER_WITH_TRAINING" = "true" ]; then
 fi
 N_GPUS_PER_NODE=${N_GPUS_PER_NODE:-${ARNOLD_WORKER_GPU:-1}}
 FIX_QWEN3_CHAT_TEMPLATE=${FIX_QWEN3_CHAT_TEMPLATE:-False}
+RAG_ENABLE=${RAG_ENABLE:-False}
+RAG_KB_INDEX_PATH=${RAG_KB_INDEX_PATH:-""}
+RAG_TOPK=${RAG_TOPK:-4}
+RAG_MAX_REF_CHARS=${RAG_MAX_REF_CHARS:-4000}
+RAG_QUERY_MODE=${RAG_QUERY_MODE:-op_signature}
+RAG_MAX_CHUNKS_PER_SOURCE=${RAG_MAX_CHUNKS_PER_SOURCE:-1}
+RAG_DEDUPE_QUERY_TOKENS=${RAG_DEDUPE_QUERY_TOKENS:-True}
 
 # Project and Experiment Names
 PROJECT_NAME=${PROJECT_NAME:-"kernel-grading"}
@@ -153,6 +160,8 @@ generate_suffix() {
       --solve_threshold) suffix+="_thresh$2"; shift 2 ;;
       --pass_at_k) suffix+="_pass$2"; shift 2 ;;
       --model_name) suffix+="_$(echo $2 | sed 's/\//_/g')"; shift 2 ;;
+      --rag_enable) suffix+="_rag$2"; shift 2 ;;
+      --rag_topk) suffix+="_ragtopk$2"; shift 2 ;;
       *) shift ;;
     esac
   done
@@ -209,6 +218,13 @@ show_help() {
   echo "Reward Options:"
   echo "  --reward_server_url URL       Kernel server URL"
   echo "  --reward_weights W            Weights as comp_corr_perf (default: 0.3_0.4_0.3)"
+  echo "  --rag_enable TRUE/FALSE       Enable manual RAG for eval prompts (default: False)"
+  echo "  --rag_kb_index_path PATH      Path to processed manual KB index"
+  echo "  --rag_topk N                  Number of retrieved chunks (default: 4)"
+  echo "  --rag_max_ref_chars N         Max injected reference chars (default: 4000)"
+  echo "  --rag_query_mode MODE         Retrieval query mode: full_prompt|architecture_code|op_signature"
+  echo "  --rag_max_chunks_per_source N Max chunks per source doc (default: 1)"
+  echo "  --rag_dedupe_query_tokens B   Dedupe retrieval query tokens (default: True)"
   echo ""
   echo "Output Options:"
   echo "  --raw_response_path PATH      Save raw responses JSONL"
@@ -289,6 +305,13 @@ parse_arguments() {
       --gradio_visualization) GRADIO_VISUALIZATION="$2"; shift 2 ;;
       --gradio_share) GRADIO_SHARE="$2"; shift 2 ;;
       --visualize_only) VISUALIZE_ONLY="$2"; shift 2 ;;
+      --rag_enable) RAG_ENABLE="$2"; shift 2 ;;
+      --rag_kb_index_path) RAG_KB_INDEX_PATH="$2"; shift 2 ;;
+      --rag_topk) RAG_TOPK="$2"; shift 2 ;;
+      --rag_max_ref_chars) RAG_MAX_REF_CHARS="$2"; shift 2 ;;
+      --rag_query_mode) RAG_QUERY_MODE="$2"; shift 2 ;;
+      --rag_max_chunks_per_source) RAG_MAX_CHUNKS_PER_SOURCE="$2"; shift 2 ;;
+      --rag_dedupe_query_tokens) RAG_DEDUPE_QUERY_TOKENS="$2"; shift 2 ;;
       *)
         echo "Unknown option: $1"
         echo "Use --help for usage information"
@@ -350,6 +373,13 @@ setup_grading_environment() {
   echo "  Rollout Mode: $ROLLOUT_MODE"
   echo "  Max Prompt Length: $MAX_PROMPT_LENGTH"
   echo "  Max Response Length: $MAX_RESPONSE_LENGTH"
+  echo "  RAG Enable: $RAG_ENABLE"
+  echo "  RAG KB Index Path: ${RAG_KB_INDEX_PATH:-none}"
+  echo "  RAG TopK: $RAG_TOPK"
+  echo "  RAG Max Ref Chars: $RAG_MAX_REF_CHARS"
+  echo "  RAG Query Mode: $RAG_QUERY_MODE"
+  echo "  RAG Max Chunks Per Source: $RAG_MAX_CHUNKS_PER_SOURCE"
+  echo "  RAG Dedupe Query Tokens: $RAG_DEDUPE_QUERY_TOKENS"
   echo ""
   echo "Evaluation Metrics:"
   echo "  Solve Threshold: $SOLVE_THRESHOLD"
@@ -399,6 +429,13 @@ run_grading() {
       data.batch_size=$BATCH_SIZE \
       data.max_prompt_length=$MAX_PROMPT_LENGTH \
       data.max_response_length=$MAX_RESPONSE_LENGTH \
+      data.rag.enable=$RAG_ENABLE \
+      data.rag.kb_index_path=$RAG_KB_INDEX_PATH \
+      data.rag.topk=$RAG_TOPK \
+      data.rag.max_ref_chars=$RAG_MAX_REF_CHARS \
+      data.rag.query_mode=$RAG_QUERY_MODE \
+      data.rag.max_chunks_per_source=$RAG_MAX_CHUNKS_PER_SOURCE \
+      data.rag.dedupe_query_tokens=$RAG_DEDUPE_QUERY_TOKENS \
       data.solve_threshold=$SOLVE_THRESHOLD \
       data.pass_at_k=$PASS_AT_K \
       data.do_sample=$DO_SAMPLE \

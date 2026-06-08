@@ -21,7 +21,12 @@ GRADIO_SHARE=True
 VISUALIZE_ONLY=False
 
 MAX_PROMPT_LENGTH=20480
-MAX_RESPONSE_LENGTH=8192
+MAX_RESPONSE_LENGTH=16384
+RAG_ENABLE=True
+RAG_KB_INDEX_PATH="kernel/rag/manual_rag_v3/processed/bm25_index.json"
+RAG_TOPK=2
+RAG_MAX_REF_CHARS=80000
+
 # Output Paths
 OUTPUT_DIR="${HDFS_RUNS_PATH}/${RUN_NAME}/grading_results"
 OUTPUT_PATH="${OUTPUT_DIR}/graded_results.parquet"
@@ -135,6 +140,11 @@ export CUSTOM_REWARD_NAME
 export NNODES
 export N_GPUS_PER_NODE
 export FIX_QWEN3_CHAT_TEMPLATE
+export SYSTEM_PROMPT_CONFIG
+export RAG_ENABLE
+export RAG_KB_INDEX_PATH
+export RAG_TOPK
+export RAG_MAX_REF_CHARS
 
 # =============================================================================
 # Run Grading

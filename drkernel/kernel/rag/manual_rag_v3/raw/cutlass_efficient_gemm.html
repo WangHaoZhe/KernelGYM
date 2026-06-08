@@ -1,0 +1,926 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta content="4.5.0" name="docs-version" />
+<meta content="repo_docs" name="project-name" />
+
+    <title>Efficient GEMM in CUDA &#8212; NVIDIA CUTLASS Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/nvidia-sphinx-theme.css?v=df3ac72c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=767de534" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script rel="preload" src="../../../_static/modal-table.js"></script>
+    <script src="../../../_static/documentation_options.js?v=772b3574"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/scrollspy-patch.js?v=edc4054a"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=65e89d2a"></script>
+    <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'media/docs/cpp/efficient_gemm';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '4.5.0';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script src="../../../_static/version-patch.js?v=3e13fdd2"></script>
+    <link rel="icon" href="../../../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Synchronization primitives" href="pipeline.html" />
+    <link rel="prev" title="GEMM Heuristics" href="heuristics.html" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+    <meta name="docbuild:last-update" content="Apr 08, 2026"/>
+
+    <script src="https://assets.adobedtm.com/5d4962a43b79/c1061d2c5e7b/launch-191c2462b890.min.js" ></script>
+    
+
+
+  <script >bazadebezolkohpepadr="1690623110"</script><script type="text/javascript" src="https://docs.nvidia.com/akam/13/64c4deed"  defer></script></head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA CUTLASS Documentation - Home"/>
+    <img src="../../../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="NVIDIA CUTLASS Documentation - Home"/>
+  
+  
+    <p class="title logo__title">NVIDIA CUTLASS Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+
+
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA CUTLASS Documentation - Home"/>
+    <img src="../../../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="NVIDIA CUTLASS Documentation - Home"/>
+  
+  
+    <p class="title logo__title">NVIDIA CUTLASS Documentation</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+
+
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"><ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../CHANGELOG.html">Changelog</a></li>
+
+
+
+
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">CuTe DSL</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../pythonDSL/overview.html">Overview</a></li>
+
+
+
+
+
+
+<li class="toctree-l1"><a class="reference internal" href="../pythonDSL/functionality.html">Functionality</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pythonDSL/quick_start.html">Quick Start Guide</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../pythonDSL/cute_dsl.html">CuTe DSL</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../pythonDSL/cute_dsl_general/dsl_introduction.html">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pythonDSL/cute_dsl_general/dsl_code_generation.html">Code Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pythonDSL/cute_dsl_general/dsl_control_flow.html">Control Flow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pythonDSL/cute_dsl_general/dsl_jit_arg_generation.html">JIT Argument Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pythonDSL/cute_dsl_general/dsl_dynamic_layout.html">JIT Argument: Layouts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pythonDSL/cute_dsl_general/dsl_jit_caching.html">JIT Caching</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pythonDSL/cute_dsl_general/dsl_jit_compilation_options.html">JIT Compilation Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pythonDSL/cute_dsl_general/types.html">JIT Types</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pythonDSL/cute_dsl_general/framework_integration.html">Integration with Frameworks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pythonDSL/cute_dsl_general/debugging.html">Debugging with the DSL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pythonDSL/cute_dsl_general/autotuning_gemm.html">Autotuning with the DSL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pythonDSL/cute_dsl_general/notebooks.html">Educational Notebooks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pythonDSL/deprecation.html">Deprecation Policy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pythonDSL/cute_dsl_general/compile_with_tvm_ffi.html">Compile with TVM FFI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pythonDSL/cute_dsl_general/dsl_ahead_of_time_compilation.html">Ahead-of-Time (AOT) Compilation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pythonDSL/cute_dsl_general/resources.html">Talks and Presentations</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../pythonDSL/cute_dsl_api.html">CuTe DSL API</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../pythonDSL/cute_dsl_api/changelog.html">changelog</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../pythonDSL/cute_dsl_api/cute.html">cute</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../pythonDSL/cute_dsl_api/cute_arch.html">arch</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pythonDSL/cute_dsl_api/cute_runtime.html">Runtime</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../pythonDSL/cute_dsl_api/cute_nvgpu.html">cute_nvgpu</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../pythonDSL/cute_dsl_api/cute_nvgpu_common.html">Common</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pythonDSL/cute_dsl_api/cute_nvgpu_warp.html">warp submodule</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pythonDSL/cute_dsl_api/cute_nvgpu_warpgroup.html">warpgroup submodule</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pythonDSL/cute_dsl_api/cute_nvgpu_cpasync.html">cpasync submodule</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pythonDSL/cute_dsl_api/cute_nvgpu_tcgen05.html">tcgen05 submodule</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2"><a class="reference internal" href="../pythonDSL/cute_dsl_api/pipeline.html">pipeline</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../pythonDSL/cute_dsl_api/utils.html">utils</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../pythonDSL/cute_dsl_api/utils_sm90.html">Utilities for SM90</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pythonDSL/cute_dsl_api/utils_sm100.html">Utilities for SM100</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="../pythonDSL/limitations.html">Limitations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pythonDSL/faqs.html">FAQs</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">CUTLASS C++</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../overview.html">Overview</a></li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<li class="toctree-l1 has-children"><a class="reference internal" href="getting_started.html">Getting Started</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ide_setup.html">IDE Setup</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="build/index.html">Build</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="build/building_in_windows_with_visual_studio.html">Building on Windows with Visual Studio</a></li>
+<li class="toctree-l3"><a class="reference internal" href="build/building_with_clang_as_host_compiler.html">Building with Clang as host compiler</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2"><a class="reference internal" href="functionality.html">Functionality</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terminology.html">Terminology</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fundamental_types.html">Fundamental Types</a></li>
+<li class="toctree-l2"><a class="reference internal" href="programming_guidelines.html">Programming Guidelines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="heuristics.html">GEMM Heuristics</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Efficient GEMM in CUDA</a></li>
+
+
+<li class="toctree-l1"><a class="reference internal" href="pipeline.html">Synchronization primitives</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="profiler.html">CUTLASS Profiler</a></li>
+
+
+
+
+<li class="toctree-l1"><a class="reference internal" href="dependent_kernel_launch.html">Dependent Kernel Launch</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="blackwell.html">Blackwell Specific</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="blackwell_functionality.html">Blackwell SM100 GEMMs</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="blackwell_cluster_launch_control.html">Blackwell Cluster Launch Control</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="cute/index.html">CuTe</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="cute/00_quickstart.html">00_quickstart</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cute/01_layout.html">01_layout</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cute/02_layout_algebra.html">02_layout_algebra</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cute/03_tensor.html">03_tensor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cute/04_algorithms.html">04_algorithms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cute/0t_mma_atom.html">0t_mma_atom</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cute/0x_gemm_tutorial.html">0x_gemm_tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cute/0y_predication.html">0y_predication</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cute/0z_tma_tensors.html">0z_tma_tensors</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="cutlass_3x.html">CUTLASS 3.x</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="cutlass_3x_design.html">Design</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cutlass_3x_backwards_compatibility.html">GEMM Backwards Compatibility</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gemm_api_3x.html">GEMM API</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="cutlass_2x.html">CUTLASS 2.x</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="layout.html">Layouts and Tensors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gemm_api.html">GEMM API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tile_iterator_concept.html">Tile Iterator Concepts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utilities.html">Utilities</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="code_organization.html">Code Organization</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="grouped_scheduler.html">Grouped Kernel Schedulers</a></li>
+
+
+
+
+
+<li class="toctree-l1"><a class="reference internal" href="implicit_gemm_convolution.html">CUTLASS Convolution</a></li>
+
+
+
+
+
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../pythonDSL/license.html">Software License Agreement</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Efficient GEMM in CUDA</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <p><img alt="ALT" src="../../../_images/gemm-hierarchy-with-epilogue-no-labels.png" /></p>
+<section id="efficient-gemm-in-cuda">
+<h1>Efficient GEMM in CUDA<a class="headerlink" href="#efficient-gemm-in-cuda" title="Link to this heading">#</a></h1>
+<p>CUTLASS implements the hierarchically blocked structure described in
+<a class="reference external" href="https://devblogs.nvidia.com/cutlass-linear-algebra-cuda/">CUTLASS: Fast Linear Algebra in CUDA C++</a>
+and the <a class="reference external" href="http://on-demand.gputechconf.com/gtc/2018/presentation/s8854-cutlass-software-primitives-for-dense-linear-algebra-at-all-levels-and-scales-within-cuda.pdf">CUTLASS GTC2018 talk</a>.</p>
+<section id="hierarchical-structure">
+<h2>Hierarchical Structure<a class="headerlink" href="#hierarchical-structure" title="Link to this heading">#</a></h2>
+<p>The basic triple loop nest computing matrix multiply may be blocked and tiled to match
+concurrency in hardware, memory locality, and parallel programming models. In CUTLASS,
+GEMM is mapped to NVIDIA GPUs with the structure illustrated by the following loop nest.</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">cta_n</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">cta_n</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">GemmN</span><span class="p">;</span><span class="w"> </span><span class="n">cta_n</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">CtaTileN</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">                     </span><span class="c1">// for each threadblock_y           } threadblock-level concurrency</span>
+<span class="w">  </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">cta_m</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">cta_m</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">GemmM</span><span class="p">;</span><span class="w"> </span><span class="n">cta_m</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">CtaTileM</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">                   </span><span class="c1">//    for each threadblock_x        }</span>
+
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">cta_k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">cta_k</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">GemmK</span><span class="p">;</span><span class="w"> </span><span class="n">cta_k</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">CtaTileK</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">                 </span><span class="c1">//       &quot;GEMM mainloop&quot; - no unrolling</span>
+<span class="w">                                                                            </span><span class="c1">//                       - one iteration of this loop is one &quot;stage&quot;</span>
+<span class="w">                                                                            </span><span class="c1">//</span>
+<span class="w">      </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">warp_n</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">warp_n</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">CtaTileN</span><span class="p">;</span><span class="w"> </span><span class="n">warp_n</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">WarpTileN</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">        </span><span class="c1">// for each warp_y                  } warp-level parallelism</span>
+<span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">warp_m</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">warp_m</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">CtaTileM</span><span class="p">;</span><span class="w"> </span><span class="n">warp_m</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">WarpTileM</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">      </span><span class="c1">//    for each warp_x               }</span>
+<span class="w">                                                                            </span><span class="c1">//</span>
+<span class="w">          </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">warp_k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">warp_k</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">CtaTileK</span><span class="p">;</span><span class="w"> </span><span class="n">warp_k</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">WarpTileK</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">         </span><span class="c1">//       fully unroll across CtaTileK</span>
+<span class="w">                                                                            </span><span class="c1">//         - one iteration of this loop is one &quot;k Group&quot;</span>
+<span class="w">                                                                            </span><span class="c1">//</span>
+<span class="w">            </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">mma_k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">mma_k</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">WarpTileK</span><span class="p">;</span><span class="w"> </span><span class="n">mma_k</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">MmaK</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">         </span><span class="c1">// for each mma instruction         } instruction-level parallelism</span>
+<span class="w">              </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">mma_n</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">mma_n</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">WarpTileN</span><span class="p">;</span><span class="w"> </span><span class="n">mma_n</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">MmaN</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">       </span><span class="c1">//    for each mma instruction      }</span>
+<span class="w">                </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">mma_m</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">mma_m</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">WarpTileM</span><span class="p">;</span><span class="w"> </span><span class="n">mma_m</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">MmaM</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">     </span><span class="c1">//        for each mma instruction  }</span>
+<span class="w">                                                                            </span><span class="c1">//</span>
+<span class="w">                  </span><span class="n">mma_instruction</span><span class="p">(</span><span class="n">d</span><span class="p">,</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="n">c</span><span class="p">);</span><span class="w">                              </span><span class="c1">//            TensorCore matrix computation</span>
+
+<span class="w">                </span><span class="p">}</span><span class="w">   </span><span class="c1">// for mma_m</span>
+<span class="w">              </span><span class="p">}</span><span class="w">   </span><span class="c1">// for mma_n</span>
+<span class="w">            </span><span class="p">}</span><span class="w">   </span><span class="c1">// for mma_k</span>
+
+<span class="w">          </span><span class="p">}</span><span class="w">   </span><span class="c1">// for warp_k</span>
+<span class="w">        </span><span class="p">}</span><span class="w">   </span><span class="c1">// for warp_m</span>
+<span class="w">      </span><span class="p">}</span><span class="w">   </span><span class="c1">// for warp_n</span>
+
+<span class="w">    </span><span class="p">}</span><span class="w">   </span><span class="c1">// for cta_k</span>
+<span class="w">  </span><span class="p">}</span><span class="w">   </span><span class="c1">// for cta_m</span>
+<span class="p">}</span><span class="w">   </span><span class="c1">// for cta_n</span>
+</pre></div>
+</div>
+<p>This tiled loop nest targets concurrency among</p>
+<ul class="simple">
+<li><p>threadblocks,</p></li>
+<li><p>warps, and</p></li>
+<li><p>CUDA and Tensor Cores.</p></li>
+</ul>
+<p>It takes advantage of memory locality within</p>
+<ul class="simple">
+<li><p>shared memory and</p></li>
+<li><p>registers.</p></li>
+</ul>
+<p>The figure below illustrates the flow of data within this structure.
+This is the hierarchical GEMM computation embodied by CUTLASS. Each stage depicts a
+nested level of tiling which corresponds to a layer of concurrency within the CUDA execution model and to a
+level within the memory hierarchy, becoming increasingly finer moving left to right.</p>
+<p><img alt="ALT" src="../../../_images/gemm-hierarchy-with-epilogue.png" /></p>
+<section id="threadblock-level-gemm">
+<h3>Threadblock-level GEMM<a class="headerlink" href="#threadblock-level-gemm" title="Link to this heading">#</a></h3>
+<p>Each threadblock computes its portion of the output GEMM by iteratively loading tiles of input
+matrices and computing an accumulated matrix product. At the threadblock level, data are loaded from
+global memory. The blocking strategy in general is key to achieving efficiency. However, the programmer
+must balance multiple conflicting goals. A
+larger threadblock means fewer fetches from global memory, thereby ensuring that DRAM bandwidth
+does not become a bottleneck.
+However, large threadblock tiles may not match the dimensions of the problem well. If either the
+GEMM <em>M</em> or <em>N</em> dimension is small, some threads within the threadblock may not perform meaningful
+work, as the threadblock may be partially outside the bounds of the problem. If both <em>M</em> and <em>N</em>
+are small while <em>K</em> is large, this scheme may launch relatively few threadblocks and fail to
+make full use of all multiprocessors within the GPU. Strategies to optimize performance for this case,
+as described in the section <a class="reference internal" href="#parallelized-reductions"><span class="std std-ref">Parallelized Reductions</span></a>,
+partition the GEMM K dimension across multiple threadblocks or multiple warps. These threadblocks
+or warps compute matrix products in parallel; the products are then reduced to compute the result.</p>
+<p>In CUTLASS, the dimensions of the threadblock tile are specified as <code class="docutils literal notranslate"><span class="pre">ThreadblockShape::{kM,</span> <span class="pre">kN,</span> <span class="pre">kK}</span></code>
+and may be tuned to specialize the GEMM computation for the target processor and dimensions of
+the GEMM problem.</p>
+</section>
+<section id="warp-level-gemm">
+<h3>Warp-level GEMM<a class="headerlink" href="#warp-level-gemm" title="Link to this heading">#</a></h3>
+<p>The warp-level GEMM maps to the warp-level parallelism within the CUDA execution model. Multiple
+warps within a threadblock fetch data from shared memory into registers and perform computations.
+Warp-level GEMMs may be implemented either by TensorCores issuing
+<a class="reference external" href="https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#warp-level-matrix-instructions-mma">mma.sync</a>
+or <a class="reference external" href="https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#warp-level-matrix-instructions-wmma-mma">wmma</a>
+instructions, or by thread-level matrix computations issued to CUDA cores.
+For maximum performance, access to shared memory should be bank conflict free. To maximize data
+reuse within the warp, a large warp-level GEMM tile should be chosen.</p>
+</section>
+<section id="thread-level-gemm">
+<h3>Thread-level GEMM<a class="headerlink" href="#thread-level-gemm" title="Link to this heading">#</a></h3>
+<p>At the lowest level of blocking, each thread is responsible for processing a certain number of
+elements. Threads cannot access each otherâs registers, so we choose an organization that enables
+reuse of values held in registers for multiple math instructions. This results in a 2D tiled
+structure within a thread, in which each thread issues a sequence of independent math instructions
+to the CUDA cores and computes an accumulated outer product.</p>
+<p>SGEMM, IGEMM, HGEMM, and DGEMM are computed by SIMT math instructions issued by thread-level matrix multiply
+procedures.</p>
+</section>
+</section>
+<section id="epilogue">
+<h2>Epilogue<a class="headerlink" href="#epilogue" title="Link to this heading">#</a></h2>
+<p>The above code focuses only on the matrix multiply computation <strong>C = AB</strong> whose result is
+held in the registers of each thread within the threadblock. The mapping of logical elements
+in the output tile to each thread is chosen to maximize performance of the matrix multiply
+computation but does not result in efficient, coalesced loads and stores to global memory.</p>
+<p>The epilogue is a separate phase in which threads exchange data through shared memory then
+cooperatively access global memory using efficient striped access patterns. It is also
+the phase in which linear scaling and other elementwise operations may be conveniently
+computed using the matrix product results as inputs.</p>
+<p>CUTLASS defines several typical epilogue operations such as linear scaling and clamping,
+but other device-side function call operators may be used to perform custom operations.</p>
+</section>
+<section id="optimizations">
+<h2>Optimizations<a class="headerlink" href="#optimizations" title="Link to this heading">#</a></h2>
+<p>The hierarchical structure described above yields an efficient mapping to the CUDA execution model and
+CUDA/TensorCores in NVIDIA GPUs. The following sections describe strategies for obtaining peak performance
+for all corners of the design space, maximizing parallelism and exploiting data locality wherever possible.</p>
+<section id="pipelining">
+<h3>Pipelining<a class="headerlink" href="#pipelining" title="Link to this heading">#</a></h3>
+<p>The blocked structure demands a large storage allocation within the registers of each CUDA thread. The
+accumulator elements typically occupy at least half a threadâs total register budget. Consequently,
+occupancy â the number of concurrent threads, warps, and threadblocks â is relatively low compared
+to other classes of GPU workloads. This limits the GPUâs ability to hide memory latency and other stalls
+by context switching to other concurrent threads within an SM.</p>
+<p>To mitigate the effects of memory latency, CUTLASS uses <em>software pipelining</em> to overlap memory accesses
+with other computation within a thread. CUTLASS accomplishes this by double buffering at the
+following scopes.</p>
+<ul class="simple">
+<li><p><strong>Threadblock-scoped shared memory tiles:</strong> two tiles are allocated in shared memory.
+One is used to load data for the current matrix operation,
+while the other tile is used to buffer data loaded from global memory
+for the next mainloop iteration.</p></li>
+<li><p><strong>Warp-scoped matrix fragments:</strong> two fragments are allocated within registers.
+One fragment is passed to CUDA and TensorCores during the current matrix computation,
+while the other is used to receive shared memory fetch returns
+for the next warp-level matrix operation.</p></li>
+</ul>
+<p>The following diagram illustrates the efficient, pipelined mainloop body used in CUTLASS GEMMs.</p>
+<p><img alt="ALT" src="../../../_images/software-pipeline.png" /></p>
+</section>
+<section id="threadblock-rasterization">
+<h3>Threadblock Rasterization<a class="headerlink" href="#threadblock-rasterization" title="Link to this heading">#</a></h3>
+<p>To maximize reuse of data held in the last level cache, CUTLASS defines several functions to
+affect the mapping of threadblocks to logical partitions of the GEMM problem. These map
+consecutively launched threadblocks to packed two-dimensional regions of the partitioned GEMM
+problem to increase the probability that these will access the same tiles of global memory at
+approximately the same time.</p>
+<p>Several functions are defined in <a class="reference external" href="https://github.com/NVIDIA/cutlass/tree/main/include/cutlass/gemm/threadblock/threadblock_swizzle.h">cutlass/gemm/threadblock_swizzle.h</a>.</p>
+</section>
+<section id="parallelized-reductions">
+<h3>Parallelized Reductions<a class="headerlink" href="#parallelized-reductions" title="Link to this heading">#</a></h3>
+<p><strong>Split K - reduction across threadblocks</strong></p>
+<p>Matrix product computations expose parallelism among <em>O(MN)</em> independent inner product
+computations. For sufficiently large problem sizes, a GEMM kernel in CUTLASS may approach
+the theoretical maximum computational throughput. For small problems, however, there are
+too few threadblocks to efficiently occupy the entire GPU.</p>
+<p>As a recourse, parallelizing the reduction performed during the inner product computation
+enables more threadblocks to execute concurrently while still taking advantage of the throughput
+benefits of large threadblock-level GEMM tiles.</p>
+<p>CUTLASS implements parallel reductions across threadblocks by partitioning the GEMM <em>K</em> dimension
+and launching an additional set of threadblocks for each partition. Consequently, we refer to
+this strategy within CUTLASS as âparallel reduction splitK.â The âparallel reduction splitKâ strategy
+requires the execution of 2 kernels: partitionedK GEMM, and batched reduction.</p>
+<p>PartitionedK GEMM resembles one flavor of batched strided GEMM. Instead of requiring users
+to specify the problem size of each batch, partitionedK GEMM asks for the overall problem size and the
+number of partitions that will be applied along the K dimension for operands A and B. For example,
+parameters of m=128, n=128, k=4096 and partition=16 will result in 16 batched strided GEMMs
+with each batch of m=128, n=128, k=256. PartitionedK also allows scenario where k is not divisible
+by the partition count.</p>
+<p>For example, parameters of m=128, n=128, k=4096 and partition=20
+will result in 20 batched strided GEMMs.
+The first 19 batches will have m=128, n=128, and k=4096/20=204,
+and the last batch will have m=128, n=128, and k=220.</p>
+<p>The batched reduction kernel takes as input the output (C) of partitionedK GEMM,
+and performs a reduction along the K-dimension.
+Users must manage workspace memory to store this intermediate result.</p>
+<p><strong>Sliced K - reduction across warps</strong></p>
+<p>Similar to the split-k scenario, sliced-k aims at improving the efficiency of kernels
+with smaller M and N dimensions, but large K dimension.
+At the thread-block level, the parameters CtaTileN and CtaTileM expose parallelism
+by partitioning the work among warps.
+Larger warpTiles expose better instruction-level parallelism (ILP) and reuse,
+but also limit the number of warps running per threadblock, which reduces efficiency.</p>
+<p>In order to improve efficiency in such scenarios, partitioning the warpTiles also along ctaTileK
+helps use the hardware more efficiently by allowing more warps to run concurrently in a CTA.
+Sliced-k kernels break down a threadblockâs computation among participating warps
+not just among the CtaTileN, CtaTileM dimension, but also the CtaTileK dimension.
+Thus, sliced-k entails a small cost in form of a reduction
+which has to happen at the end among the participating warps.
+This is because each warp computes using only a âsliceâ of CtaTileK,
+so each warp only has a partial sum before the reduction.</p>
+</section>
+<section id="hopper-warp-specialization">
+<h3>Hopper Warp Specialization<a class="headerlink" href="#hopper-warp-specialization" title="Link to this heading">#</a></h3>
+<p>Note: the following section on warp-specialization contains details that are specific
+to the Hopper kernel design. Blackwell SM100 kernels have a substantially different warp-specialization structure,
+however, the concept of separating out producer and consumer agents still applies.</p>
+<p>Starting with Hopper, CUTLASS 3.0 incorporates the concept of <a class="reference external" href="https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#spatial-partitioning-also-known-as-warp-specialization">Warp Specialization</a>
+as part of the kernel design. A thread block is partitioned into two sets of warps, <a class="reference external" href="https://github.com/NVIDIA/cutlass/tree/main/include/cutlass/gemm/kernel/sm90_gemm_tma_warpspecialized.hpp"><em>producer</em> warp group</a> and <a class="reference external" href="https://github.com/NVIDIA/cutlass/tree/main/include/cutlass/gemm/kernel/sm90_gemm_tma_warpspecialized.hpp"><em>consumer</em> warp group</a>. The <em>producer</em> warp group loads data from global memory into shared memory buffers using the new <a class="reference external" href="https://developer.nvidia.com/blog/nvidia-hopper-architecture-in-depth/">Tensor Memory Accelerator (TMA)</a>.</p>
+<p><a class="reference external" href="https://github.com/NVIDIA/cutlass/tree/main/include/cutlass/gemm/collective/sm90_mma_tma_gmma_ss_warpspecialized.hpp"><em>Producer</em> warp group (DMA)</a> waits for the shared memory buffers to be signaled as <a class="reference external" href="https://github.com/NVIDIA/cutlass/tree/main/include/cutlass/gemm/collective/sm90_mma_tma_gmma_ss_warpspecialized.hpp">empty</a> by the <em>consumer</em> warp group using the newly added <strong>Async Pipeline class</strong> (<a class="reference internal" href="pipeline.html"><span class="std std-doc">refer</span></a>). Once the data is written into the shared memory, TMA is also updates the barrier associated with that stage to notify affected threads that the buffer has been <a class="reference external" href="https://github.com/NVIDIA/cutlass/tree/main/include/cutlass/gemm/collective/sm90_mma_tma_gmma_ss_warpspecialized.hpp">filled</a>. The <a class="reference external" href="https://github.com/NVIDIA/cutlass/tree/main/include/cutlass/gemm/collective/sm90_mma_tma_gmma_ss_warpspecialized.hpp"><em>Consumer</em> warp group (MMA)</a> on the other hand waits for the <em>producer</em> warp group to signal that the buffer is <a class="reference external" href="https://github.com/NVIDIA/cutlass/tree/main/include/cutlass/gemm/collective/sm90_mma_tma_gmma_ss_warpspecialized.hpp">filled</a> and then launches tensor core MMA operations. Finally, the <em>consumer</em> warp group <a class="reference external" href="https://github.com/NVIDIA/cutlass/tree/main/include/cutlass/gemm/collective/sm90_mma_tma_gmma_ss_warpspecialized.hpp">releases</a> the buffers for the next set of TMA loads to happens.</p>
+<p><strong>Warp-Specialized Persistent Cooperative kernel design</strong></p>
+<p>Another flavor of Warp-Specialized kernel design being introduced starting with Hopper is the <a class="reference external" href="https://github.com/NVIDIA/cutlass/tree/main/include/cutlass/gemm/kernel/sm90_gemm_tma_warpspecialized_cooperative.hpp"><em>Warp-Specialized Persistent Cooperative</em></a> kernel. Like the Warp-Specialized kernel, the concepts of warp groups and barrier synchronization between warp groups remain the same in the cooperative design.
+The distinctive feature of the Warp-Specialized Persistent Cooperative kernel are the following :</p>
+<ul class="simple">
+<li><p>Persistent thread blocks launched to occupy as many SMs as mentioned in the <a class="reference external" href="https://github.com/NVIDIA/cutlass/tree/main/include/cutlass/kernel_hardware_info.hpp">KernelHardwareInfo</a> struct. These persistent thread blocks are used to tile the output and thus (potentially) compute multiple output tiles through their lifetime. The main benefit this adds is amortization of the thread-block launch and kernel prologue overheads which are typical of all kernels.</p></li>
+<li><p>Presence of two <em>consumer</em> warp groups cooperating on the same output tile by splitting the tile in half across the M dimension. This allows for larger tile sizes to be enabled - since the register pressure per <em>consumer</em> warp group is reduced - and hence improving performance.</p></li>
+</ul>
+<p>Since each thread block now computes multiple output tiles, the shape of the grid launch and the scheduling of tiles to the thread blocks is managed using the new <a class="reference external" href="https://github.com/NVIDIA/cutlass/tree/main/include/cutlass/gemm/kernel/sm90_tile_scheduler.hpp"><em>Tile Scheduler</em></a>. The <em>Tile Scheduler</em> considers the shape of the <em>clusters</em> as well as the available number of available SMs to compute a valid scheduling of the output tiles to launched thread blocks.</p>
+<p><strong>Warp-Specialized Persistent Ping-Pong kernel design</strong></p>
+<p>The third kernel design is the <a class="reference external" href="https://github.com/NVIDIA/cutlass/tree/main/include/cutlass/gemm/kernel/sm90_gemm_tma_warpspecialized_pingpong.hpp"><em>Warp-Specialized Persistent Ping-Pong</em></a> kernel.
+Like the Warp-Specialized Persistent Cooperative, kernel the concepts of warp groups, barrier synchronization between warp groups, and the shape of the grid launch remain the same in the persistent ping-pong design.
+The distinctive feature of the Warp-Specialized Persistent Ping-Pong kernel is the following :</p>
+<ul class="simple">
+<li><p>The two <em>consumer</em> warp groups are assigned a different output tile using the Tile Scheduler. This allows for <em>epilogue</em> of one <em>consumer</em> warp group to be overlapped with the math operations of the other <em>consumer</em> warp group - thus maximizing tensor core utilization.</p></li>
+<li><p>The <em>producer</em> warp group synchronizes using the <a class="reference external" href="https://github.com/NVIDIA/cutlass/tree/main/include/cutlass/pipeline/pipeline.hpp">Ordered Sequence Barrier</a> to fill buffers of the two <em>consumer</em> warp groups one after the other in order.</p></li>
+</ul>
+</section>
+</section>
+</section>
+<section id="resources">
+<h1>Resources<a class="headerlink" href="#resources" title="Link to this heading">#</a></h1>
+<p>The following additional resources describe design and implementation details of GEMMs
+targeting NVIDIA GPUs.</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://www.nvidia.com/en-us/gtc">Developing CUDA Kernels to Push Tensor Cores to the Absolute Limit on NVIDIA A100.</a> (SR 21745)</p></li>
+<li><p><a class="reference external" href="https://devblogs.nvidia.com/cutlass-linear-algebra-cuda/">CUTLASS: Fast Linear Algebra in CUDA C++</a></p></li>
+<li><p><a class="reference external" href="https://on-demand-gtc.gputechconf.com/gtcnew/sessionview.php?sessionName=s8854-cutlass%3a+software+primitives+for+dense+linear+algebra+at+all+levels+and+scales+within+cuda">CUTLASS: SOFTWARE PRIMITIVES FOR DENSE LINEAR ALGEBRA AT ALL LEVELS AND SCALES WITHIN CUDA</a></p></li>
+<li><p><a class="reference external" href="https://developer.download.nvidia.com/video/gputechconf/gtc/2019/presentation/s9593-cutensor-high-performance-tensor-operations-in-cuda-v2.pdf">Programming Tensor Cores: NATIVE VOLTA TENSOR CORES WITH CUTLASS</a></p></li>
+<li><p><a class="reference external" href="https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#wmma">CUDA Programming Guide: warp matrix functions</a></p></li>
+<li><p><a class="reference external" href="https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#warp-level-matrix-instructions-mma">Matrix Multiply Accumulate Instructions</a></p></li>
+</ul>
+</section>
+<section id="copyright">
+<h1>Copyright<a class="headerlink" href="#copyright" title="Link to this heading">#</a></h1>
+<p>Copyright (c) 2017 - 2026 NVIDIA CORPORATION &amp; AFFILIATES. All rights reserved.
+SPDX-License-Identifier: BSD-3-Clause</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">  Redistribution and use in source and binary forms, with or without</span>
+<span class="go">  modification, are permitted provided that the following conditions are met:</span>
+
+<span class="go">  1. Redistributions of source code must retain the above copyright notice, this</span>
+<span class="go">  list of conditions and the following disclaimer.</span>
+
+<span class="go">  2. Redistributions in binary form must reproduce the above copyright notice,</span>
+<span class="go">  this list of conditions and the following disclaimer in the documentation</span>
+<span class="go">  and/or other materials provided with the distribution.</span>
+
+<span class="go">  3. Neither the name of the copyright holder nor the names of its</span>
+<span class="go">  contributors may be used to endorse or promote products derived from</span>
+<span class="go">  this software without specific prior written permission.</span>
+
+<span class="go">  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot;</span>
+<span class="go">  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE</span>
+<span class="go">  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE</span>
+<span class="go">  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE</span>
+<span class="go">  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL</span>
+<span class="go">  DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR</span>
+<span class="go">  SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER</span>
+<span class="go">  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,</span>
+<span class="go">  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE</span>
+<span class="go">  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span>
+</pre></div>
+</div>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="heuristics.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">GEMM Heuristics</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="pipeline.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Synchronization primitives</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+
+
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#">Efficient GEMM in CUDA</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#hierarchical-structure">Hierarchical Structure</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#threadblock-level-gemm">Threadblock-level GEMM</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#warp-level-gemm">Warp-level GEMM</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#thread-level-gemm">Thread-level GEMM</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#epilogue">Epilogue</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#optimizations">Optimizations</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pipelining">Pipelining</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#threadblock-rasterization">Threadblock Rasterization</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#parallelized-reductions">Parallelized Reductions</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#hopper-warp-specialization">Hopper Warp Specialization</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#resources">Resources</a></li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#copyright">Copyright</a></li>
+</ul>
+
+  </nav></div>
+
+</div></div>
+              
+            
+
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../../../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../../../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+
+  <p class="copyright">
+    
+      Copyright Â© 2025-2026, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Apr 08, 2026.
+  <br/>
+</p></div>
+      
+        <div class="footer-item">
+<div class="extra_footer">
+  
+      <script type="text/javascript">if (typeof _satellite !== "undefined") {_satellite.pageBottom();}</script>
+    
+  
+</div></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  <noscript><img src="https://docs.nvidia.com/akam/13/pixel_64c4deed?a=dD05MjA2MDU0NjNmYTkwNDgxNTFjMTJjYjFjOWViMzYyNWJkZjJiZGFiJmpzPW9mZg==" style="visibility: hidden; position: absolute; left: -999px; top: -999px;" /></noscript></body>
+</html>

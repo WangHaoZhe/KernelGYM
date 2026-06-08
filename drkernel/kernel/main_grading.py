@@ -1106,6 +1106,8 @@ def main_task(config):
         truncation='error',
         filter_overlong_prompts=config.data.filter_overlong_prompts,
         system_prompt_config=config.data.get("system_prompt_config", None),
+        reference_template=config.data.get("reference_template", None),
+        rag_config=config.data.get("rag", {}),
     )
 
     dataloader = StatefulDataLoader(

@@ -27,6 +27,8 @@ from torch.utils.data import Dataset
 from transformers import PreTrainedTokenizer, ProcessorMixin
 from verl.utils.model import compute_position_id_with_mask
 
+from kernel.rag.retriever import BM25ManualRetriever, format_retrieved_context
+
 
 def collate_fn(data_list: list[dict]) -> dict:
     tensors = defaultdict(list)
@@ -96,6 +98,8 @@ class RLHFDataset(Dataset):
         sample_size=None,
         filter_overlong_prompts=True,
         system_prompt_config=None,
+        reference_template=None,
+        rag_config=None,
     ):
         if not isinstance(parquet_files, (List, ListConfig)):
             parquet_files = [parquet_files]
@@ -118,12 +122,139 @@ class RLHFDataset(Dataset):
         self.sample_size = sample_size
         self.filter_overlong_prompts = filter_overlong_prompts
         self.system_prompt_config = system_prompt_config
+        self.reference_template = reference_template
+        self.rag_config = rag_config or {}
+        self.rag_enabled = bool(self.rag_config.get("enable", False))
+        self.rag_topk = int(self.rag_config.get("topk", 4))
+        self.rag_max_ref_chars = int(self.rag_config.get("max_ref_chars", 4000))
+        self.rag_query_mode = self.rag_config.get("query_mode", "op_signature")
+        self.rag_max_chunks_per_source = self.rag_config.get("max_chunks_per_source", 1)
+        self.rag_dedupe_query_tokens = bool(self.rag_config.get("dedupe_query_tokens", True))
+        self.rag_fallback_to_plain = bool(self.rag_config.get("fallback_to_plain", True))
+        self.rag_section_template = self.rag_config.get("section_template")
+        self.rag_retriever = None
+        if self.rag_enabled:
+            kb_index_path = self.rag_config.get("kb_index_path")
+            if not kb_index_path:
+                raise ValueError("data.rag.kb_index_path must be set when RAG is enabled.")
+            if not self.reference_template:
+                raise ValueError("data.reference_template must be set when references are enabled.")
+            if not self.rag_section_template:
+                raise ValueError("data.rag.section_template must be set when RAG is enabled.")
+            self.rag_retriever = BM25ManualRetriever(
+                kb_index_path,
+                query_mode=self.rag_query_mode,
+                max_chunks_per_source=self.rag_max_chunks_per_source,
+                dedupe_query_tokens=self.rag_dedupe_query_tokens,
+            )
 
         # whether to store the dataset in state_dict()
         # default not store
         self.serialize_dataset = False
         self._download()
         self._read_files_and_tokenize()
+
+    def _build_rag_section(self, prompt: str):
+        if not self.rag_enabled or self.rag_retriever is None:
+            return None
+
+        chunks = self.rag_retriever.retrieve(prompt, topk=self.rag_topk)
+        if not chunks and self.rag_fallback_to_plain:
+            return None
+
+        context = format_retrieved_context(chunks, max_chars=self.rag_max_ref_chars)
+        if not context and self.rag_fallback_to_plain:
+            return None
+
+        return self.rag_section_template.format(context=context)
+
+    def _normalize_chat(self, chat):
+        if hasattr(chat, "tolist") and not isinstance(chat, list):
+            chat = chat.tolist()
+        return chat
+
+    def _render_prompt(self, chat):
+        if self.apply_chat_template:
+            return self.tokenizer.apply_chat_template(chat, add_generation_prompt=True, tokenize=False)
+        if isinstance(chat, list):
+            return chat[0]['content']
+        return str(chat)
+
+    def _replace_last_user_prompt(self, chat, prompt):
+        if isinstance(chat, str):
+            return prompt
+        if not isinstance(chat, list):
+            return chat
+
+        updated_chat = copy.deepcopy(chat)
+        for idx in range(len(updated_chat) - 1, -1, -1):
+            message = updated_chat[idx]
+            if not isinstance(message, dict) or message.get("role") != "user":
+                continue
+            if isinstance(message.get("content", ""), str):
+                updated_chat[idx]["content"] = prompt
+            return updated_chat
+        return updated_chat
+
+    def _build_augmented_prompt_variants(self, prompt: str):
+        rag_section = self._build_rag_section(prompt)
+
+        variants = []
+        if rag_section is not None:
+            variants.append(
+                self.reference_template.format(
+                    prompt=prompt,
+                    sections=rag_section,
+                )
+            )
+        elif self.reference_template is not None:
+            variants.append(
+                self.reference_template.format(
+                    prompt=prompt,
+                    sections=""
+                )
+            )
+        variants.append(prompt)
+
+        deduped_variants = []
+        seen = set()
+        for variant in variants:
+            if variant in seen:
+                continue
+            deduped_variants.append(variant)
+            seen.add(variant)
+        return deduped_variants
+
+    def _maybe_apply_references(self, chat):
+        # commit these two lines to open skill when rag is disabled
+        if not self.rag_enabled:
+            return chat, self._render_prompt(chat)
+
+        if isinstance(chat, str):
+            original_prompt = chat
+        elif isinstance(chat, list):
+            original_prompt = None
+            for idx in range(len(chat) - 1, -1, -1):
+                message = chat[idx]
+                if not isinstance(message, dict) or message.get("role") != "user":
+                    continue
+                content = message.get("content", "")
+                if isinstance(content, str):
+                    original_prompt = content
+                break
+            if original_prompt is None:
+                return chat, self._render_prompt(chat)
+        else:
+            return chat, self._render_prompt(chat)
+
+        for candidate_prompt in self._build_augmented_prompt_variants(original_prompt):
+            candidate_chat = self._replace_last_user_prompt(chat, candidate_prompt)
+            rendered_prompt = self._render_prompt(candidate_chat)
+            candidate_length = len(self.tokenizer.encode(rendered_prompt, add_special_tokens=False))
+            if candidate_length <= self.max_prompt_length:
+                return candidate_chat, rendered_prompt
+
+        return chat, self._render_prompt(chat)
 
     def _download(self, use_origin_parquet=False):
         from verl.utils.fs import copy_to_local
@@ -191,7 +322,7 @@ class RLHFDataset(Dataset):
         """
         row_dict: dict = self.dataframe.iloc[item].to_dict()
 
-        chat = copy.deepcopy(row_dict.pop(self.prompt_key))
+        chat = self._normalize_chat(copy.deepcopy(row_dict.pop(self.prompt_key)))
 
         # Apply prompt from config file if provided
         if self.system_prompt_config is not None and self.apply_chat_template is True:
@@ -242,12 +373,7 @@ class RLHFDataset(Dataset):
         elif self.system_prompt_config is not None and self.apply_chat_template is False:
             raise ValueError("Error: system_prompt_config is provided but apply_chat_template is False.")
 
-        if self.apply_chat_template:
-            prompt_with_chat_template = self.tokenizer.apply_chat_template(
-                chat, add_generation_prompt=True, tokenize=False
-            )
-        else:
-            prompt_with_chat_template = chat[0]['content']
+        chat, prompt_with_chat_template = self._maybe_apply_references(chat)
 
         is_multi_modal = self.image_key in row_dict
         if is_multi_modal:  # expand image token

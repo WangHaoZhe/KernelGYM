@@ -49,7 +49,7 @@ data:
   apply_chat_template: true
   filter_overlong_prompts: true
   trust_remote_code: false
-  system_prompt_config: kernel/config/prompt_config/eval_env_hint.yaml
+  system_prompt_config: null
 
 # Model configuration
 model:

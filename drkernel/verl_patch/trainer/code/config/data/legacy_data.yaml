@@ -125,6 +125,46 @@ apply_chat_template: False
 # System prompt configuration file path (for multi-turn conversations)
 system_prompt_config: null
 
+reference_template: |
+  [Task]
+  {prompt}
+
+  {sections}
+
+  [Instruction]
+  Use the references only when they help. Focus on the benchmark setting and return a complete Triton-based implementation.
+  
+  [Important evaluation constraints]
+  - Evaluation uses CUDA and focuses on the provided benchmark setting.
+  - Do not add fallback branches to PyTorch implementations.
+  - Do not gate Triton execution on `self.training`, `self.bn.training`,
+  `torch.is_grad_enabled()`, or any tensor's `requires_grad`.
+  - Do not add conditional logic such as "if training/use torch else use Triton".
+  - Provide a direct Triton-based implementation for the benchmarked forward path.
+  - Keep the implementation simple and focused on the evaluated case.
+  - The evaluator instantiates ModelNew with the reference get_init_inputs().
+  - Preserve the exact __init__ signature and argument types from the reference.
+
+  [Operator Selection]
+  - Do not replace cuDNN-backed or highly optimized library operators such as Conv/ConvTranspose and BatchNorm unless explicitly required.
+  - Keep those modules in PyTorch and preserve their parameters/state.
+  - Prefer Triton for simple elementwise, reduction, layout, or post-op fusion around those operators.
+
+  Give your answer directly.
+
+rag:
+  enable: false
+  kb_index_path: null
+  topk: 4
+  max_ref_chars: 4000
+  query_mode: op_signature
+  max_chunks_per_source: 1
+  dedupe_query_tokens: true
+  fallback_to_plain: true
+  section_template: |
+    [Reference Manual Excerpts]
+    {context}
+
 # Dual-level oversampling configuration
 # Prompt-level: Generate multiple trajectories per prompt (e.g., 2x means 2 trajectories per prompt)
 prompt_oversampling_factor: 1.0

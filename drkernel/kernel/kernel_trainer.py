@@ -1474,6 +1474,8 @@ class RayKernelTrainer(RayPPOTrainer):
                 truncation=self.config.data.get("truncation", "error"),
                 filter_overlong_prompts=self.config.data.filter_overlong_prompts,
                 system_prompt_config=self.config.data.get("system_prompt_config", None),
+                reference_template=self.config.data.get("reference_template", None),
+                rag_config=self.config.data.get("rag", {}),
             )
         else:
             self.train_dataset = RLHFDataset(
@@ -1489,6 +1491,8 @@ class RayKernelTrainer(RayPPOTrainer):
                 truncation=self.config.data.get("truncation", "error"),
                 filter_overlong_prompts=self.config.data.filter_overlong_prompts,
                 system_prompt_config=self.config.data.get("system_prompt_config", None),
+                reference_template=self.config.data.get("reference_template", None),
+                rag_config=self.config.data.get("rag", {}),
             )
         assert self.train_dataset.truncation == self.config.data.get(
             "truncation", "error"
@@ -1664,6 +1668,8 @@ class RayKernelTrainer(RayPPOTrainer):
             return_raw_chat=self.config.data.get("return_raw_chat", False),
             truncation="error",
             system_prompt_config=self.config.data.get("system_prompt_config", None),
+            reference_template=self.config.data.get("reference_template", None),
+            rag_config=self.config.data.get("rag", {}),
         )
         self.val_dataloader = StatefulDataLoader(
             dataset=self.val_dataset,

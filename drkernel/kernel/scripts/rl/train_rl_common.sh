@@ -218,6 +218,13 @@ PROMPT_OVERSAMPLING_FACTOR=${PROMPT_OVERSAMPLING_FACTOR:-2.0}  # 2.0 recommended
 SAMPLE_OVERSAMPLING_FACTOR=${SAMPLE_OVERSAMPLING_FACTOR:-1.5}  # 1.5 recommended with two-gate
 MAX_SKIP_STEPS=${MAX_SKIP_STEPS:-10}
 FIX_QWEN3_CHAT_TEMPLATE=${FIX_QWEN3_CHAT_TEMPLATE:-False}
+RAG_ENABLE=${RAG_ENABLE:-False}
+RAG_KB_INDEX_PATH=${RAG_KB_INDEX_PATH:-""}
+RAG_TOPK=${RAG_TOPK:-4}
+RAG_MAX_REF_CHARS=${RAG_MAX_REF_CHARS:-4000}
+RAG_QUERY_MODE=${RAG_QUERY_MODE:-op_signature}
+RAG_MAX_CHUNKS_PER_SOURCE=${RAG_MAX_CHUNKS_PER_SOURCE:-1}
+RAG_DEDUPE_QUERY_TOKENS=${RAG_DEDUPE_QUERY_TOKENS:-True}
 
 # Sample selection and group management
 SAMPLE_SELECTION_STRATEGY=${SAMPLE_SELECTION_STRATEGY:-efficiency_stochastic}  # Better exploration
@@ -317,6 +324,8 @@ generate_suffix() {
       --max_turn) suffix+="_maxturn$2"; shift 2 ;;
       --val_before_train) suffix+="_valbefore$2"; shift 2 ;;
       --is_get_last_turn) suffix+="_isgetlastturn$2"; shift 2 ;;
+      --rag_enable) suffix+="_rag$2"; shift 2 ;;
+      --rag_topk) suffix+="_ragtopk$2"; shift 2 ;;
             *) shift ;;
     esac
   done
@@ -349,6 +358,11 @@ show_help() {
   echo "  --model_name NAME             Model name (default: Qwen3-8B-Base)"
   echo "  --rollout_is_kwargs KEY=VALUE Additional IS kwargs (default: {})"
   echo "  --rollout_rs_kwargs KEY=VALUE Additional RS kwargs (default: {})"
+  echo "  --system_prompt_config PATH   Prompt config injected before RAG (default: null)"
+  echo "  --rag_enable TRUE/FALSE       Enable manual RAG for RL/eval prompts (default: False)"
+  echo "  --rag_kb_index_path PATH      Path to processed manual KB index"
+  echo "  --rag_topk N                  Number of retrieved chunks (default: 4)"
+  echo "  --rag_max_ref_chars N         Max injected reference chars (default: 4000)"
   echo ""
   echo "Examples:"
   echo "  $0                                    # Standard training"
@@ -457,6 +471,13 @@ parse_arguments() {
       --max_turn) MAX_TURN="$2"; shift 2 ;;
       --val_before_train) VAL_BEFORE_TRAIN="$2"; shift 2 ;;
       --is_get_last_turn) IS_GET_LAST_TURN="$2"; shift 2 ;;
+      --rag_enable) RAG_ENABLE="$2"; shift 2 ;;
+      --rag_kb_index_path) RAG_KB_INDEX_PATH="$2"; shift 2 ;;
+      --rag_topk) RAG_TOPK="$2"; shift 2 ;;
+      --rag_max_ref_chars) RAG_MAX_REF_CHARS="$2"; shift 2 ;;
+      --rag_query_mode) RAG_QUERY_MODE="$2"; shift 2 ;;
+      --rag_max_chunks_per_source) RAG_MAX_CHUNKS_PER_SOURCE="$2"; shift 2 ;;
+      --rag_dedupe_query_tokens) RAG_DEDUPE_QUERY_TOKENS="$2"; shift 2 ;;
       --speedup_reward_upper_bound) SPEEDUP_REWARD_UPPER_BOUND="$2"; shift 2 ;;
       --speedup_reward_lower_bound) SPEEDUP_REWARD_LOWER_BOUND="$2"; shift 2 ;;
       --reward_shaping) REWARD_SHAPING="$2"; shift 2 ;;
@@ -656,6 +677,13 @@ setup_training_environment() {
   echo "Gradient Clip: $GRAD_CLIP"
   echo "Val Only: $VAL_ONLY"
   echo "Fix Qwen3 Chat Template: $FIX_QWEN3_CHAT_TEMPLATE"
+  echo "RAG Enable: $RAG_ENABLE"
+  echo "RAG KB Index Path: $RAG_KB_INDEX_PATH"
+  echo "RAG TopK: $RAG_TOPK"
+  echo "RAG Max Ref Chars: $RAG_MAX_REF_CHARS"
+  echo "RAG Query Mode: $RAG_QUERY_MODE"
+  echo "RAG Max Chunks Per Source: $RAG_MAX_CHUNKS_PER_SOURCE"
+  echo "RAG Dedupe Query Tokens: $RAG_DEDUPE_QUERY_TOKENS"
 
   # set ppo micro token
   PPO_MICRO_TOKEN=$(generate_model_micro_token "$MODEL_NAME")
@@ -701,6 +729,7 @@ run_training() {
       data.max_prompt_length=$MAX_PROMPT_LENGTH \
       data.max_response_length=$MAX_RESPONSE_LENGTH \
       data.apply_chat_template=$APPLY_CHAT_TEMPLATE \
+      data.system_prompt_config=$SYSTEM_PROMPT_CONFIG \
       data.use_prioritized_sampling=$USE_PRIORITIZED_SAMPLING \
       data.update_success_rates_every=1 \
       data.prompt_oversampling_factor=$PROMPT_OVERSAMPLING_FACTOR \
@@ -713,6 +742,13 @@ run_training() {
       data.solverate_high=$SOLVERATE_HIGH \
       data.solverate_mean=$SOLVERATE_MEAN \
       data.solverate_std=$SOLVERATE_STD \
+      data.rag.enable=$RAG_ENABLE \
+      data.rag.kb_index_path=$RAG_KB_INDEX_PATH \
+      data.rag.topk=$RAG_TOPK \
+      data.rag.max_ref_chars=$RAG_MAX_REF_CHARS \
+      data.rag.query_mode=$RAG_QUERY_MODE \
+      data.rag.max_chunks_per_source=$RAG_MAX_CHUNKS_PER_SOURCE \
+      data.rag.dedupe_query_tokens=$RAG_DEDUPE_QUERY_TOKENS \
       trainer.fix_qwen3_chat_template=$FIX_QWEN3_CHAT_TEMPLATE \
       +algorithm.rollout_is_kwargs=$ROLLOUT_IS_KWARGS \
       +algorithm.rollout_rs_kwargs=$ROLLOUT_RS_KWARGS \

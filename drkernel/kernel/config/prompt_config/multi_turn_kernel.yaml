@@ -21,7 +21,7 @@ per_turn_prompts:
       Server feedback (status/metrics/errors):
       {feedback}
 
-      Important evaluation constraints:
+      [Important evaluation constraints]
       - Evaluation uses CUDA and focuses on the provided benchmark setting.
       - Do not add fallback branches to PyTorch implementations.
       - Do not gate Triton execution on `self.training`, `self.bn.training`,
@@ -30,4 +30,8 @@ per_turn_prompts:
       - Provide a direct Triton-based implementation for the benchmarked forward path.
       - Keep the implementation simple and focused on the evaluated case.
 
-      Return an improved Triton implementation named `ModelNew` as a single ```python``` block. Let's think step by step.
+      [Input Contract]
+      - The evaluator instantiates ModelNew with the reference get_init_inputs().
+      - Preserve the exact __init__ signature and argument types from the reference.
+
+      Return an improved Triton implementation named `ModelNew` as a single ```python``` block. Give your answer directly.
