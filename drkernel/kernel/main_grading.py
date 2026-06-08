@@ -914,17 +914,31 @@ def run_generation(config):
 # Helper Functions (moved from main_task for better code organization)
 # ============================================================================
 
+def _looks_like_kernel_submission(code: str) -> bool:
+    if not code:
+        return False
+    return (
+        "class ModelNew" in code
+        or ("@triton.jit" in code and "def forward" in code)
+        or ("import triton" in code and "nn.Module" in code)
+    )
+
+
 def extract_code(text):
-    """Extract Python code from text (handles markdown code blocks)."""
+    """Extract submitted Python code from text, preferring complete kernel blocks."""
     if not text:
         return ""
-    # try markdown python block
-    match = re.search(r"```python\n(.*?)```", text, re.DOTALL)
-    if match:
-        return match.group(1)
-    match = re.search(r"```\n(.*?)```", text, re.DOTALL)
-    if match:
-        return match.group(1)
+
+    # Model responses often quote short traceback snippets before the final answer.
+    # Prefer a fenced block that looks like a complete KernelBench submission.
+    code_blocks = re.findall(r"```(?:python|py)?[ \t]*(?:\r?\n)?(.*?)```", text, re.DOTALL | re.IGNORECASE)
+    for block in reversed(code_blocks):
+        candidate = block.strip()
+        if _looks_like_kernel_submission(candidate):
+            return candidate
+    if code_blocks:
+        return code_blocks[-1].strip()
+
     return text
 
 

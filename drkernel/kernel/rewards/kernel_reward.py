@@ -60,35 +60,45 @@ def extract_reference_code(solution_str: str) -> str:
     return solution_str
 
 
+def _looks_like_kernel_submission(code: str) -> bool:
+    if not code:
+        return False
+    return (
+        "class ModelNew" in code
+        or ("@triton.jit" in code and "def forward" in code)
+        or ("import triton" in code and "nn.Module" in code)
+    )
+
+
 def extract_kernel_code(solution_str: str) -> str:
     """
-    从解决方案字符串中提取内核代码
-    
-    Args:
-        solution_str: 包含提示和响应的完整字符串
-        
-    Returns:
-        提取的内核代码
+    从解决方案字符串中提取内核代码。优先选择完整的 ModelNew 提交，
+    避免把反馈/解释中的短代码片段当成最终 kernel。
     """
-    # 查找内核实现标记
     patterns = [
         r"# Kernel Implementation\s*\n(.*?)(?=# End|$)",
         r"```python\s*# Kernel\s*\n(.*?)```",
         r"# Your implementation:\s*\n(.*?)(?=# End|$)",
         r"# Generated kernel:\s*\n(.*?)(?=# End|$)",
     ]
-    
+
+    marker_matches = []
     for pattern in patterns:
-        match = re.search(pattern, solution_str, re.DOTALL)
-        if match:
-            return match.group(1).strip()
-    
-    # 如果没有找到特定标记，尝试提取最后一个代码块
-    code_blocks = re.findall(r"```(?:\w+)?\s*\n?(.*?)```", solution_str, re.DOTALL)
+        marker_matches.extend(match.group(1).strip() for match in re.finditer(pattern, solution_str, re.DOTALL | re.IGNORECASE))
+    for candidate in reversed(marker_matches):
+        if _looks_like_kernel_submission(candidate):
+            return candidate
+
+    code_blocks = re.findall(r"```(?:python|py)?[ \t]*(?:\r?\n)?(.*?)```", solution_str, re.DOTALL | re.IGNORECASE)
+    for block in reversed(code_blocks):
+        candidate = block.strip()
+        if _looks_like_kernel_submission(candidate):
+            return candidate
+    if marker_matches:
+        return marker_matches[-1].strip()
     if code_blocks:
         return code_blocks[-1].strip()
-    
-    # 回退：假设整个响应就是内核代码
+
     return solution_str
 
 def compute_kernel_reward_batch(solution_strs: list, ground_truths: list, entry_points: str, **kwargs) -> list:

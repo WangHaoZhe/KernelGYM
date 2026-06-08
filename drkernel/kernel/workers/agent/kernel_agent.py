@@ -71,15 +71,31 @@ class KernelAgent(BaseAgent):
             return match.group("block")
         return None
 
-    def _extract_python_code(self, response: str) -> str | None:
-        for pattern in self.kernel_code_patterns:
-            match = pattern.search(response)
-            if match:
-                return match.group(1).strip()
+    def _looks_like_kernel_submission(self, code: str) -> bool:
+        if not code:
+            return False
+        return (
+            "class ModelNew" in code
+            or ("@triton.jit" in code and "def forward" in code)
+            or ("import triton" in code and "nn.Module" in code)
+        )
 
-        code_blocks = self.generic_code_block_re.findall(response)
+    def _extract_python_code(self, response: str) -> str | None:
+        marker_matches = []
+        for pattern in self.kernel_code_patterns:
+            marker_matches.extend(match.group(1).strip() for match in pattern.finditer(response))
+        for candidate in reversed(marker_matches):
+            if self._looks_like_kernel_submission(candidate):
+                return candidate
+
+        code_blocks = [block.strip() for block in self.generic_code_block_re.findall(response)]
+        for candidate in reversed(code_blocks):
+            if self._looks_like_kernel_submission(candidate):
+                return candidate
+        if marker_matches:
+            return marker_matches[-1]
         if code_blocks:
             # Return the last discovered block, similar to kernel_reward.extract_kernel_code
-            return code_blocks[-1].strip()
+            return code_blocks[-1]
 
         return None
