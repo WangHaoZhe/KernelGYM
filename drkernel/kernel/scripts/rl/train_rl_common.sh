@@ -645,11 +645,13 @@ setup_training_environment() {
   fi
 
   N_GPUS_PER_NODE=${N_GPUS_PER_NODE:-${GPUS_PER_NODE:-${ARNOLD_WORKER_GPU:-8}}}
+  WANDB_MODE=${WANDB_MODE:-offline}
 
   export RUN_NAME
   export MODEL_PATH_RESOLVED
   export CHECKPOINT_DIR
   export N_GPUS_PER_NODE
+  export WANDB_MODE
   echo "FULL RUN_NAME: $RUN_NAME"
   echo "Training with the following parameters:"
   echo "Train Batch Size: $TRAIN_BATCH_SIZE"
